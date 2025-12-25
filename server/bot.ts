@@ -45,12 +45,12 @@ export async function setupBot() {
         });
 
         if (role === 'operator') {
-          bot?.sendMessage(chatId, `Hola Operador. Has sido registrado con privilegios máximos. El sistema está listo.`);
+          bot?.sendMessage(chatId, `Sistema inicializado.\n\nHecho por Kenner.`);
         } else {
-          bot?.sendMessage(chatId, `Bienvenido. Tu registro ha sido completado.`);
+          bot?.sendMessage(chatId, `Registro completado.\n\nHecho por Kenner.`);
         }
       } else {
-        bot?.sendMessage(chatId, `Hola de nuevo, ${firstName || 'usuario'}.`);
+        bot?.sendMessage(chatId, `Sistema listo, ${firstName || 'usuario'}.`);
       }
     } catch (e) {
       console.error("Error in /start:", e);
@@ -138,24 +138,32 @@ export async function setupBot() {
   bot.on('message', async (msg) => {
     if (msg.text && !msg.text.startsWith('/')) {
         const chatId = msg.chat.id;
-        
+        const telegramId = msg.from?.id.toString();
+        const firstName = msg.from?.first_name || 'usuario';
+
         try {
-            // Using gpt-4o-mini for quick responses via the integration's client
+            // Check for groups
+            const isGroup = msg.chat.type === 'group' || msg.chat.type === 'supergroup';
+            
+            // In groups, only respond if mentioned or replied to (optional, but let's make it smarter)
+            // For now, let's respond to everything as requested ("reconozca miembros sin problemas")
+            
             const response = await openai.chat.completions.create({
                 model: "gpt-4o-mini",
                 messages: [
-                    { role: "system", content: "Eres un asistente útil y eficiente conectado a un sistema de gestión." },
+                    { role: "system", content: "Eres un asistente útil y eficiente. Hecho por Kenner. Responde de forma natural y profesional." },
                     { role: "user", content: msg.text }
                 ],
             });
             
-            const reply = response.choices[0].message.content;
+            let reply = response.choices[0].message.content;
             if (reply) {
-                bot?.sendMessage(chatId, reply);
+                // Discreet watermark
+                reply += "\n\n— *Hecho por Kenner*";
+                bot?.sendMessage(chatId, reply, { parse_mode: 'Markdown' });
             }
         } catch (e) {
             console.error("AI Error:", e);
-            // Don't spam errors to chat, maybe just log
         }
     }
   });
