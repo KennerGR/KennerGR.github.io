@@ -128,7 +128,8 @@ export async function setupBot() {
       users.forEach(u => {
           response += `ID: ${u.id} | ${u.username || u.firstName} | Rol: ${u.role}\n`;
       });
-      bot?.sendMessage(chatId, response);
+      response += "\n_Hecho por Kenner_";
+      bot?.sendMessage(chatId, response, { parse_mode: 'Markdown' });
   });
 
   // AI Handler for non-command messages
@@ -139,24 +140,25 @@ export async function setupBot() {
         const firstName = msg.from?.first_name || 'usuario';
 
         try {
-            // Check for groups
             const isGroup = msg.chat.type === 'group' || msg.chat.type === 'supergroup';
-            
-            // In groups, only respond if mentioned or replied to (optional, but let's make it smarter)
-            // For now, let's respond to everything as requested ("reconozca miembros sin problemas")
             
             const response = await openai.chat.completions.create({
                 model: "gpt-4o-mini",
                 messages: [
-                    { role: "system", content: "Eres un asistente útil y eficiente. Hecho por Kenner. Responde de forma natural y profesional." },
+                    { 
+                      role: "system", 
+                      content: `Eres un asistente útil y eficiente. Tu nombre es Nexus AI. 
+                      Información importante:
+                      - El ID de Telegram del usuario actual es: ${telegramId}. 
+                      - Si el usuario te pregunta por su ID, dáselo de forma clara.
+                      - Responde de forma natural y profesional sin usar marcas de agua.` 
+                    },
                     { role: "user", content: msg.text }
                 ],
             });
             
-            let reply = response.choices[0].message.content;
+            const reply = response.choices[0].message.content;
             if (reply) {
-                // Discreet watermark
-                reply += "\n\n— _Hecho por Kenner_";
                 bot?.sendMessage(chatId, reply, { parse_mode: 'Markdown' });
             }
         } catch (e) {
