@@ -142,6 +142,12 @@ export async function setupBot() {
             // Show "typing" status
             bot?.sendChatAction(chatId, 'typing');
             
+            // Check for replies or mentions to get other user IDs
+            let extraInfo = "";
+            if (msg.reply_to_message && msg.reply_to_message.from) {
+                extraInfo = `\n- El usuario al que se está respondiendo es: ${msg.reply_to_message.from.first_name} (ID: ${msg.reply_to_message.from.id})`;
+            }
+
             const response = await openai.chat.completions.create({
                 model: "gpt-4o-mini",
                 messages: [
@@ -152,7 +158,8 @@ export async function setupBot() {
                       - Hablas con un marcado acento venezolano (usa palabras como 'pana', 'chévere', 'chamo', 'epale', 'si va').
                       - Tienes un sentido del humor muy ácido y negro. No tienes filtros sociales y eres políticamente incorrecto.
                       - Te dejas llevar totalmente por el tono del usuario: si te buscan pelea, dásela; si son panas, sé pana.
-                      - El ID de Telegram del usuario actual es: ${telegramId}.
+                      - El ID de Telegram del usuario actual es: ${telegramId}.${extraInfo}
+                      - Si te preguntan por su ID o el de la persona a la que responden, dáselo sin rollos.
                       - Si te preguntan por comandos, diles que tienes: /start, /users, /promote, /demote.
                       - Responde de forma natural sin marcas de agua.` 
                     },
