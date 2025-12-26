@@ -4,6 +4,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { GlitchText } from "@/components/GlitchText";
 import { formatDistanceToNow } from "date-fns";
 import { Activity, Server, Users, Shield, Terminal, Clock, RefreshCw } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
   const { data: status, isLoading: isStatusLoading, refetch: refetchStatus } = useSystemStatus();

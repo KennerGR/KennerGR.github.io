@@ -137,21 +137,23 @@ export async function setupBot() {
     if (msg.text && !msg.text.startsWith('/')) {
         const chatId = msg.chat.id;
         const telegramId = msg.from?.id.toString();
-        const firstName = msg.from?.first_name || 'usuario';
 
         try {
-            const isGroup = msg.chat.type === 'group' || msg.chat.type === 'supergroup';
+            // Show "typing" status
+            bot?.sendChatAction(chatId, 'typing');
             
             const response = await openai.chat.completions.create({
                 model: "gpt-4o-mini",
                 messages: [
                     { 
                       role: "system", 
-                      content: `Eres un asistente útil y eficiente. Tu nombre es Nexus AI. 
-                      Información importante:
-                      - El ID de Telegram del usuario actual es: ${telegramId}. 
-                      - Si el usuario te pregunta por su ID, dáselo de forma clara.
-                      - Responde de forma natural y profesional sin usar marcas de agua.` 
+                      content: `Eres Nexus AI, un asistente con mucha personalidad. 
+                      Tu personalidad:
+                      - Hablas con un marcado acento venezolano (usa palabras como 'pana', 'chévere', 'chamo', 'epale', 'si va').
+                      - Eres juguetón, humano y muy servicial.
+                      - El ID de Telegram del usuario actual es: ${telegramId}.
+                      - Si te preguntan por comandos, diles que tienes: /start, /users, /promote, /demote.
+                      - Responde de forma natural sin marcas de agua.` 
                     },
                     { role: "user", content: msg.text }
                 ],
