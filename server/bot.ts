@@ -19,12 +19,10 @@ export async function setupBot() {
 
   console.log("Telegram bot started...");
 
-  bot.onText(/\/start/, async (msg) => {
+    bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
     const telegramId = msg.from?.id.toString();
-    const username = msg.from?.username;
     const firstName = msg.from?.first_name;
-    const lastName = msg.from?.last_name;
 
     if (!telegramId) return;
 
@@ -32,29 +30,28 @@ export async function setupBot() {
       let user = await storage.getUserByTelegramId(telegramId);
       
       if (!user) {
-        // Check if it's the first user
         const userCount = await storage.getUserCount();
         const role = userCount === 0 ? 'operator' : 'user';
         
         user = await storage.createUser({
           telegramId,
-          username,
+          role,
           firstName,
-          lastName,
-          role
+          lastName: msg.from?.last_name,
+          username: msg.from?.username
         });
 
         if (role === 'operator') {
-          bot?.sendMessage(chatId, `Sistema inicializado.\n\nHecho por Kenner.`);
+          bot?.sendMessage(chatId, `Sistema inicializado.`);
         } else {
-          bot?.sendMessage(chatId, `Registro completado.\n\nHecho por Kenner.`);
+          bot?.sendMessage(chatId, `Registro completado.`);
         }
       } else {
         bot?.sendMessage(chatId, `Sistema listo, ${firstName || 'usuario'}.`);
       }
     } catch (e) {
       console.error("Error in /start:", e);
-      bot?.sendMessage(chatId, "Hubo un error al procesar tu solicitud.");
+      bot?.sendMessage(chatId, "Error al procesar solicitud.");
     }
   });
 
@@ -159,7 +156,7 @@ export async function setupBot() {
             let reply = response.choices[0].message.content;
             if (reply) {
                 // Discreet watermark
-                reply += "\n\n— *Hecho por Kenner*";
+                reply += "\n\n— _Hecho por Kenner_";
                 bot?.sendMessage(chatId, reply, { parse_mode: 'Markdown' });
             }
         } catch (e) {

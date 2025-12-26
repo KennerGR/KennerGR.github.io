@@ -43,6 +43,7 @@ export default function Dashboard() {
             </h1>
             <p className="text-muted-foreground font-mono max-w-lg">
               Authorized personnel only. Monitoring bot status and user activity.
+              <span className="block mt-1 opacity-50 text-xs">Hecho por Kenner</span>
             </p>
           </div>
           
