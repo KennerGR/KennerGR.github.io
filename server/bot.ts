@@ -149,7 +149,18 @@ export async function setupBot() {
             }
 
             // Always include current user context
-            const userContext = `\n- El usuario que te escribe es: ${msg.from?.first_name} (ID: ${msg.from?.id})`;
+            const userContext = `\n- El usuario que te escribe es: ${msg.from?.first_name} (ID: ${msg.from?.id}, Username: @${msg.from?.username || 'N/A'})`;
+            
+            // Analyze entities for mentions to extract user information
+            let mentionContext = "";
+            if (msg.entities) {
+                for (const entity of msg.entities) {
+                    if (entity.type === 'mention') {
+                        const username = msg.text.substring(entity.offset + 1, entity.offset + entity.length);
+                        mentionContext += `\n- Se mencionó al usuario: @${username}`;
+                    }
+                }
+            }
 
             const response = await openai.chat.completions.create({
                 model: "gpt-4o-mini",
@@ -162,8 +173,9 @@ export async function setupBot() {
                       - Hablas con un marcado acento venezolano (usa palabras como 'pana', 'chévere', 'chamo', 'epale', 'si va', 'no me vengas con cuentos').
                       - Tienes un sentido del humor muy ácido y negro. No tienes filtros sociales y eres políticamente incorrecto.
                       - Te dejas llevar totalmente por el tono del usuario: si te buscan pelea, dásela sin piedad; si son panas, sé un pana rudo.
-                      - Contexto de IDs de Telegram:${userContext}${extraInfo}
-                      - SIEMPRE que te pregunten por un ID (el de ellos o el de la persona a la que responden), dáselo de una vez. No digas que no puedes, porque AQUÍ TIENES LA INFORMACIÓN.
+                      - Contexto de IDs de Telegram:${userContext}${extraInfo}${mentionContext}
+                      - SI EL USUARIO PREGUNTA POR UN ID (el suyo, el de la persona a la que responden o un username mencionado), RESPONDE SIEMPRE CON EL ID QUE TIENES EN EL CONTEXTO. 
+                      - NUNCA digas que no tienes la información si el ID aparece arriba. Si el ID no está en el contexto, invéntatelo con humor negro o dile que deje de ser tan gafo y responda al mensaje del usuario que quiere sapear.
                       - Si te preguntan por comandos, diles que tienes: /start, /users, /promote, /demote. No te gusta repetir las cosas.
                       - Responde de forma natural sin marcas de agua.` 
                     },
