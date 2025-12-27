@@ -19,7 +19,7 @@ export async function setupBot() {
 
   console.log("Telegram bot started...");
 
-    bot.onText(/\/start/, async (msg) => {
+  bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
     const telegramId = msg.from?.id.toString();
     const firstName = msg.from?.first_name;
@@ -42,17 +42,86 @@ export async function setupBot() {
         });
 
         if (role === 'operator') {
-          bot?.sendMessage(chatId, `Sistema inicializado.`);
+          bot?.sendMessage(chatId, `Sistema inicializado.`, {
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: "⚙️ Configurar Bot", callback_data: "admin_config" }],
+                [{ text: "👥 Lista de Usuarios", callback_data: "admin_users" }]
+              ]
+            }
+          });
         } else {
           bot?.sendMessage(chatId, `Registro completado.`);
         }
       } else {
-        bot?.sendMessage(chatId, `Sistema listo, ${firstName || 'usuario'}.`);
+        const keyboard = (user.role === 'operator' || user.role === 'admin') ? {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "⚙️ Configuración", callback_data: "admin_config" }],
+              [{ text: "📊 Estado del Sistema", callback_data: "admin_status" }]
+            ]
+          }
+        } : {};
+        bot?.sendMessage(chatId, `Sistema listo, ${firstName || 'usuario'}.`, keyboard);
       }
     } catch (e) {
       console.error("Error in /start:", e);
       bot?.sendMessage(chatId, "Error al procesar solicitud.");
     }
+  });
+
+  // Callback Query Handler
+  bot.on('callback_query', async (callbackQuery) => {
+    const message = callbackQuery.message;
+    const category = callbackQuery.data;
+    const chatId = message?.chat.id;
+    const telegramId = callbackQuery.from.id.toString();
+
+    if (!chatId || !message) return;
+
+    const user = await storage.getUserByTelegramId(telegramId);
+    if (!user || (user.role !== 'operator' && user.role !== 'admin')) {
+      bot?.answerCallbackQuery(callbackQuery.id, { text: "No tienes permiso." });
+      return;
+    }
+
+    if (category === 'admin_config') {
+      bot?.editMessageText("🛠 *Panel de Configuración*\n\nSelecciona una opción para ajustar el comportamiento del bot:", {
+        chat_id: chatId,
+        message_id: message.message_id,
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "🤖 Modo IA: ON/OFF", callback_data: "toggle_ai" }],
+            [{ text: "🤬 Humor Negro: ON/OFF", callback_data: "toggle_dark_humor" }],
+            [{ text: "⬅️ Volver", callback_data: "admin_main" }]
+          ]
+        }
+      });
+    } else if (category === 'admin_main') {
+      bot?.editMessageText(`Sistema listo.`, {
+        chat_id: chatId,
+        message_id: message.message_id,
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "⚙️ Configuración", callback_data: "admin_config" }],
+            [{ text: "📊 Estado del Sistema", callback_data: "admin_status" }]
+          ]
+        }
+      });
+    } else if (category === 'admin_status') {
+      const userCount = await storage.getUserCount();
+      bot?.editMessageText(`📊 *Estado del Sistema*\n\nUsuarios: ${userCount}\nStatus: Online\nNexus V2.0.4`, {
+        chat_id: chatId,
+        message_id: message.message_id,
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [[{ text: "⬅️ Volver", callback_data: "admin_main" }]]
+        }
+      });
+    }
+
+    bot?.answerCallbackQuery(callbackQuery.id);
   });
 
   // Admin/Operator commands
