@@ -1,6 +1,6 @@
-import { users, type User, type InsertUser, config, type Config, type InsertConfig } from "@shared/schema";
+import { users, type User, type InsertUser, config, type Config, type InsertConfig, messages, type Message, type InsertMessage } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -13,6 +13,9 @@ export interface IStorage {
   getConfig(key: string): Promise<Config | undefined>;
   setConfig(key: string, value: string): Promise<Config>;
   getAllConfig(): Promise<Config[]>;
+
+  addMessage(message: InsertMessage): Promise<Message>;
+  getChatHistory(telegramId: string, limit?: number): Promise<Message[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -63,6 +66,19 @@ export class DatabaseStorage implements IStorage {
 
   async getAllConfig(): Promise<Config[]> {
     return db.select().from(config);
+  }
+
+  async addMessage(message: InsertMessage): Promise<Message> {
+    const [msg] = await db.insert(messages).values(message).returning();
+    return msg;
+  }
+
+  async getChatHistory(telegramId: string, limit = 10): Promise<Message[]> {
+    return db.select()
+      .from(messages)
+      .where(eq(messages.telegramId, telegramId))
+      .orderBy(desc(messages.createdAt))
+      .limit(limit);
   }
 }
 

@@ -26,4 +26,21 @@ export const insertConfigSchema = createInsertSchema(config);
 export type Config = typeof config.$inferSelect;
 export type InsertConfig = z.infer<typeof insertConfigSchema>;
 
-export * from "./models/chat";
+export const conversations = pgTable("conversations", {
+  id: serial("id").primaryKey(),
+  telegramId: text("telegram_id").notNull(),
+  title: text("title"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  telegramId: text("telegram_id").notNull(),
+  role: text("role").notNull(), // 'user', 'assistant', 'system'
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true });
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;

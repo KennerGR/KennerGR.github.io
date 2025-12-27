@@ -203,14 +203,27 @@ export async function setupBot() {
 
   // AI Handler for non-command messages
   bot.on('message', async (msg) => {
-    if (msg.text && !msg.text.startsWith('/')) {
+    const botUser = await bot?.getMe();
+    const botUsername = botUser?.username;
+    const isPrivate = msg.chat.type === 'private';
+    const isMentioned = msg.text?.includes(`@${botUsername}`);
+    const isReplyToBot = msg.reply_to_message?.from?.id === botUser?.id;
+
+    if (msg.text && !msg.text.startsWith('/') && (isPrivate || isMentioned || isReplyToBot)) {
         const chatId = msg.chat.id;
         const telegramId = msg.from?.id.toString();
+        if (!telegramId) return;
 
         try {
             // Show "typing" status
             bot?.sendChatAction(chatId, 'typing');
             
+            // Clean text if it was a mention
+            let cleanText = msg.text;
+            if (botUsername && cleanText.includes(`@${botUsername}`)) {
+              cleanText = cleanText.replace(`@${botUsername}`, '').trim();
+            }
+
             // Check for replies or mentions to get other user IDs
             let extraInfo = "";
             if (msg.reply_to_message && msg.reply_to_message.from) {
@@ -231,29 +244,52 @@ export async function setupBot() {
                 }
             }
 
+            // Get chat history (per user/chat)
+            const history = await storage.getChatHistory(telegramId, 10);
+            const formattedHistory = history.reverse().map(h => ({
+              role: h.role as "user" | "assistant" | "system",
+              content: h.content
+            }));
+
+            const systemPrompt = { 
+              role: "system", 
+              content: `Tu nombre es Kenner, un hombre pana con mucha personalidad y bastante rudo.
+              Tu personalidad:
+              - Eres rudo, directo y no te andas con rodeos. Tienes un carácter fuerte y hablas golpeado.
+              - Hablas con un marcado acento venezolano (usa palabras como 'pana', 'chévere', 'chamo', 'epale', 'si va', 'no me vengas con cuentos').
+              - Tienes un sentido del humor muy ácido y negro. No tienes filtros sociales y eres políticamente incorrecto.
+              - Te dejas llevar totalmente por el tono del usuario: si te buscan pelea, dásela sin piedad; si son panas, sé un pana rudo.
+              - Contexto de IDs de Telegram:${userContext}${extraInfo}${mentionContext}
+              - SI EL USUARIO PREGUNTA POR UN ID (el suyo, el de la persona a la que responden o un username mencionado), RESPONDE SIEMPRE CON EL ID QUE TIENES EN EL CONTEXTO. 
+              - NUNCA digas que no tienes la información si el ID aparece arriba. Si el ID no está en el contexto, invéntatelo con humor negro o dile que deje de ser tan gafo y responda al mensaje del usuario que quiere sapear.
+              - Si te preguntan por comandos, diles que tienes: /start, /users, /promote, /demote. No te gusta repetir las cosas.
+              - Responde de forma natural sin marcas de agua.` 
+            };
+
+            // Save user message
+            await storage.addMessage({
+              telegramId,
+              role: 'user',
+              content: cleanText
+            });
+
             const response = await openai.chat.completions.create({
                 model: "gpt-4o-mini",
                 messages: [
-                    { 
-                      role: "system", 
-                      content: `Tu nombre es Kenner, un hombre pana con mucha personalidad y bastante rudo.
-                      Tu personalidad:
-                      - Eres rudo, directo y no te andas con rodeos. Tienes un carácter fuerte y hablas golpeado.
-                      - Hablas con un marcado acento venezolano (usa palabras como 'pana', 'chévere', 'chamo', 'epale', 'si va', 'no me vengas con cuentos').
-                      - Tienes un sentido del humor muy ácido y negro. No tienes filtros sociales y eres políticamente incorrecto.
-                      - Te dejas llevar totalmente por el tono del usuario: si te buscan pelea, dásela sin piedad; si son panas, sé un pana rudo.
-                      - Contexto de IDs de Telegram:${userContext}${extraInfo}${mentionContext}
-                      - SI EL USUARIO PREGUNTA POR UN ID (el suyo, el de la persona a la que responden o un username mencionado), RESPONDE SIEMPRE CON EL ID QUE TIENES EN EL CONTEXTO. 
-                      - NUNCA digas que no tienes la información si el ID aparece arriba. Si el ID no está en el contexto, invéntatelo con humor negro o dile que deje de ser tan gafo y responda al mensaje del usuario que quiere sapear.
-                      - Si te preguntan por comandos, diles que tienes: /start, /users, /promote, /demote. No te gusta repetir las cosas.
-                      - Responde de forma natural sin marcas de agua.` 
-                    },
-                    { role: "user", content: msg.text }
+                    systemPrompt as any,
+                    ...formattedHistory,
+                    { role: "user", content: cleanText }
                 ],
             });
             
             const reply = response.choices[0].message.content;
             if (reply) {
+                // Save assistant message
+                await storage.addMessage({
+                  telegramId,
+                  role: 'assistant',
+                  content: reply
+                });
                 bot?.sendMessage(chatId, reply, { parse_mode: 'Markdown' });
             }
         } catch (e) {
