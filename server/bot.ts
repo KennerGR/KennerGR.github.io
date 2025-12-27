@@ -54,15 +54,18 @@ export async function setupBot() {
           bot?.sendMessage(chatId, `Registro completado.`);
         }
       } else {
-        const keyboard = (user.role === 'operator' || user.role === 'admin') ? {
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: "⚙️ Configuración", callback_data: "admin_config" }],
-              [{ text: "📊 Estado del Sistema", callback_data: "admin_status" }]
-            ]
-          }
-        } : {};
-        bot?.sendMessage(chatId, `Sistema listo, ${firstName || 'usuario'}.`, keyboard);
+        if (user.role === 'operator' || user.role === 'admin') {
+          bot?.sendMessage(chatId, `Sistema listo, ${firstName || 'usuario'}.`, {
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: "⚙️ Configuración", callback_data: "admin_config" }],
+                [{ text: "📊 Estado del Sistema", callback_data: "admin_status" }]
+              ]
+            }
+          });
+        } else {
+          bot?.sendMessage(chatId, `Sistema listo, ${firstName || 'usuario'}.`);
+        }
       }
     } catch (e) {
       console.error("Error in /start:", e);
@@ -73,55 +76,76 @@ export async function setupBot() {
   // Callback Query Handler
   bot.on('callback_query', async (callbackQuery) => {
     const message = callbackQuery.message;
-    const category = callbackQuery.data;
+    const data = callbackQuery.data;
     const chatId = message?.chat.id;
     const telegramId = callbackQuery.from.id.toString();
 
     if (!chatId || !message) return;
 
-    const user = await storage.getUserByTelegramId(telegramId);
-    if (!user || (user.role !== 'operator' && user.role !== 'admin')) {
-      bot?.answerCallbackQuery(callbackQuery.id, { text: "No tienes permiso." });
-      return;
-    }
+    try {
+      const user = await storage.getUserByTelegramId(telegramId);
+      if (!user || (user.role !== 'operator' && user.role !== 'admin')) {
+        await bot?.answerCallbackQuery(callbackQuery.id, { text: "No tenéis permiso, chamo.", show_alert: true });
+        return;
+      }
 
-    if (category === 'admin_config') {
-      bot?.editMessageText("🛠 *Panel de Configuración*\n\nSelecciona una opción para ajustar el comportamiento del bot:", {
-        chat_id: chatId,
-        message_id: message.message_id,
-        parse_mode: 'Markdown',
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: "🤖 Modo IA: ON/OFF", callback_data: "toggle_ai" }],
-            [{ text: "🤬 Humor Negro: ON/OFF", callback_data: "toggle_dark_humor" }],
-            [{ text: "⬅️ Volver", callback_data: "admin_main" }]
-          ]
-        }
-      });
-    } else if (category === 'admin_main') {
-      bot?.editMessageText(`Sistema listo.`, {
-        chat_id: chatId,
-        message_id: message.message_id,
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: "⚙️ Configuración", callback_data: "admin_config" }],
-            [{ text: "📊 Estado del Sistema", callback_data: "admin_status" }]
-          ]
-        }
-      });
-    } else if (category === 'admin_status') {
-      const userCount = await storage.getUserCount();
-      bot?.editMessageText(`📊 *Estado del Sistema*\n\nUsuarios: ${userCount}\nStatus: Online\nNexus V2.0.4`, {
-        chat_id: chatId,
-        message_id: message.message_id,
-        parse_mode: 'Markdown',
-        reply_markup: {
-          inline_keyboard: [[{ text: "⬅️ Volver", callback_data: "admin_main" }]]
-        }
-      });
-    }
+      if (data === 'admin_config') {
+        await bot?.editMessageText("🛠 *Panel de Configuración*\n\nSelecciona una opción para ajustar el comportamiento del bot:", {
+          chat_id: chatId,
+          message_id: message.message_id,
+          parse_mode: 'Markdown',
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "🤖 Modo IA: ON/OFF", callback_data: "toggle_ai" }],
+              [{ text: "🤬 Humor Negro: ON/OFF", callback_data: "toggle_dark_humor" }],
+              [{ text: "⬅️ Volver", callback_data: "admin_main" }]
+            ]
+          }
+        });
+      } else if (data === 'admin_main') {
+        await bot?.editMessageText(`Sistema listo.`, {
+          chat_id: chatId,
+          message_id: message.message_id,
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "⚙️ Configuración", callback_data: "admin_config" }],
+              [{ text: "📊 Estado del Sistema", callback_data: "admin_status" }]
+            ]
+          }
+        });
+      } else if (data === 'admin_status') {
+        const userCount = await storage.getUserCount();
+        await bot?.editMessageText(`📊 *Estado del Sistema*\n\nUsuarios: ${userCount}\nStatus: Online\nNexus V2.0.4`, {
+          chat_id: chatId,
+          message_id: message.message_id,
+          parse_mode: 'Markdown',
+          reply_markup: {
+            inline_keyboard: [[{ text: "⬅️ Volver", callback_data: "admin_main" }]]
+          }
+        });
+      } else if (data === 'admin_users') {
+        const users = await storage.getAllUsers();
+        let response = "👥 *Usuarios Registrados:*\n\n";
+        users.forEach(u => {
+          response += `• ID: \`${u.telegramId}\` | ${u.firstName || 'Sin nombre'} | Rol: ${u.role}\n`;
+        });
+        await bot?.editMessageText(response, {
+          chat_id: chatId,
+          message_id: message.message_id,
+          parse_mode: 'Markdown',
+          reply_markup: {
+            inline_keyboard: [[{ text: "⬅️ Volver", callback_data: "admin_main" }]]
+          }
+        });
+      } else if (data?.startsWith('toggle_')) {
+        await bot?.answerCallbackQuery(callbackQuery.id, { text: "Opción activada con éxito.", show_alert: false });
+      }
 
-    bot?.answerCallbackQuery(callbackQuery.id);
+      await bot?.answerCallbackQuery(callbackQuery.id);
+    } catch (error) {
+      console.error("Callback Error:", error);
+      await bot?.answerCallbackQuery(callbackQuery.id, { text: "Error en el panel." });
+    }
   });
 
   // Admin/Operator commands
