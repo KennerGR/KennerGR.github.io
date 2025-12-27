@@ -260,6 +260,31 @@ export async function setupBot() {
       bot?.sendMessage(chatId, response, { parse_mode: 'Markdown' });
   });
 
+  bot.onText(/\/restart/, async (msg) => {
+    const chatId = msg.chat.id;
+    const telegramId = msg.from?.id.toString();
+    if (!telegramId) return;
+
+    try {
+      const user = await storage.getUserByTelegramId(telegramId);
+      if (!user || (user.role !== 'operator' && user.role !== 'admin')) {
+        return;
+      }
+
+      await bot?.sendMessage(chatId, "🔄 *Reiniciando sistemas...* Aguantá un segundo, ya vuelvo.", { parse_mode: 'Markdown' });
+      
+      console.log(`System restart triggered by ${user.username || user.firstName}`);
+      
+      // We exit the process, and Replit's workflow runner will automatically restart it.
+      setTimeout(() => {
+        process.exit(0);
+      }, 1000);
+    } catch (e) {
+      console.error("Restart error:", e);
+      bot?.sendMessage(chatId, "Error al intentar reiniciar.");
+    }
+  });
+
   // AI Handler for non-command messages
   bot.on('message', async (msg) => {
     const botUser = await bot?.getMe();
