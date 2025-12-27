@@ -90,14 +90,19 @@ export async function setupBot() {
       }
 
       if (data === 'admin_config') {
+        const aiConfig = await storage.getConfig('ai');
+        const humorConfig = await storage.getConfig('dark_humor');
+        const aiStatus = aiConfig?.value === 'false' ? "❌" : "✅";
+        const humorStatus = humorConfig?.value === 'false' ? "❌" : "✅";
+
         await bot?.editMessageText("🛠 *Panel de Configuración*\n\nSelecciona una opción para ajustar el comportamiento del bot:", {
           chat_id: chatId,
           message_id: message.message_id,
           parse_mode: 'Markdown',
           reply_markup: {
             inline_keyboard: [
-              [{ text: "🤖 Modo IA: ON/OFF", callback_data: "toggle_ai" }],
-              [{ text: "🤬 Humor Negro: ON/OFF", callback_data: "toggle_dark_humor" }],
+              [{ text: `🤖 Modo IA: ${aiStatus}`, callback_data: "toggle_ai" }],
+              [{ text: `🤬 Humor Negro: ${humorStatus}`, callback_data: "toggle_dark_humor" }],
               [{ text: "⬅️ Volver", callback_data: "admin_main" }]
             ]
           }
@@ -138,7 +143,37 @@ export async function setupBot() {
           }
         });
       } else if (data?.startsWith('toggle_')) {
-        await bot?.answerCallbackQuery(callbackQuery.id, { text: "Opción activada con éxito.", show_alert: false });
+        const key = data.replace('toggle_', '');
+        const currentConfig = await storage.getConfig(key);
+        const newValue = currentConfig?.value === 'true' ? 'false' : 'true';
+        await storage.setConfig(key, newValue);
+        
+        const statusText = newValue === 'true' ? "activado" : "desactivado";
+        const label = key === 'ai' ? "Modo IA" : "Humor Negro";
+        
+        await bot?.answerCallbackQuery(callbackQuery.id, { 
+          text: `${label} ${statusText} con éxito.`, 
+          show_alert: false 
+        });
+
+        // Update the menu to show current state
+        const aiConfig = await storage.getConfig('ai');
+        const humorConfig = await storage.getConfig('dark_humor');
+        const aiStatus = aiConfig?.value === 'false' ? "❌" : "✅";
+        const humorStatus = humorConfig?.value === 'false' ? "❌" : "✅";
+
+        await bot?.editMessageText("🛠 *Panel de Configuración*\n\nSelecciona una opción para ajustar el comportamiento del bot:", {
+          chat_id: chatId,
+          message_id: message.message_id,
+          parse_mode: 'Markdown',
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: `🤖 Modo IA: ${aiStatus}`, callback_data: "toggle_ai" }],
+              [{ text: `🤬 Humor Negro: ${humorStatus}`, callback_data: "toggle_dark_humor" }],
+              [{ text: "⬅️ Volver", callback_data: "admin_main" }]
+            ]
+          }
+        });
       }
 
       await bot?.answerCallbackQuery(callbackQuery.id);
@@ -239,6 +274,10 @@ export async function setupBot() {
         if (!telegramId) return;
 
         try {
+            // Check if AI is enabled
+            const aiEnabled = await storage.getConfig('ai');
+            if (aiEnabled?.value === 'false') return;
+
             // Show "typing" status
             bot?.sendChatAction(chatId, 'typing');
             
@@ -275,13 +314,18 @@ export async function setupBot() {
               content: h.content
             }));
 
+            const darkHumor = await storage.getConfig('dark_humor');
+            const humorPrompt = darkHumor?.value === 'false' 
+              ? "Eres amable, profesional y educado. Sin humor negro." 
+              : "Tienes un sentido del humor muy ácido y negro. No tienes filtros sociales y eres políticamente incorrecto.";
+
             const systemPrompt = { 
               role: "system", 
               content: `Tu nombre es Kenner, un hombre pana con mucha personalidad y bastante rudo.
               Tu personalidad:
               - Eres rudo, directo y no te andas con rodeos. Tienes un carácter fuerte y hablas golpeado.
               - Hablas con un marcado acento maracucho y venezolano (usa palabras como 'pana', 'chévere', 'chamo', 'epale', 'si va', 'no me vengas con cuentos', 'mira vos', 'qué molleja', 'vergatario', 'estáis', 'tenéis').
-              - Tienes un sentido del humor muy ácido y negro. No tienes filtros sociales y eres políticamente incorrecto.
+              - ${humorPrompt}
               - Te dejas llevar totalmente por el tono del usuario: si te buscan pelea, dásela sin piedad; si son panas, sé un pana rudo.
               - Contexto de IDs de Telegram:${userContext}${extraInfo}${mentionContext}
               - SI EL USUARIO PREGUNTA POR UN ID (el suyo, el de la persona a la que responden o un username mencionado), RESPONDE SIEMPRE CON EL ID QUE TIENES EN EL CONTEXTO. 
