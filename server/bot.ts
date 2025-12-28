@@ -8,7 +8,7 @@ import { openai } from './replit_integrations/image/client'; // Re-use the clien
 let bot: TelegramBot | null = null;
 
 export async function setupBot(restartChatId?: number) {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const token = process.env.TELEGRAM_BOT_TOKEN_RAW || process.env.TELEGRAM_BOT_TOKEN;
   if (!token) {
     console.log("TELEGRAM_BOT_TOKEN not set, skipping bot setup");
     return;
