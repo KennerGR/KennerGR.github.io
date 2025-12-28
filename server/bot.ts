@@ -7,7 +7,7 @@ import { openai } from './replit_integrations/image/client'; // Re-use the clien
 
 let bot: TelegramBot | null = null;
 
-export async function setupBot() {
+export async function setupBot(restartChatId?: number) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token) {
     console.log("TELEGRAM_BOT_TOKEN not set, skipping bot setup");
@@ -18,6 +18,10 @@ export async function setupBot() {
   bot = new TelegramBot(token, { polling: true });
 
   console.log("Telegram bot started...");
+
+  if (restartChatId) {
+    bot.sendMessage(restartChatId, "✅ *¡Ya volví, mi alma!* El sistema está activo y funcionando de nuevo. Nexus listo.", { parse_mode: 'Markdown' });
+  }
 
   bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
@@ -285,8 +289,8 @@ export async function setupBot() {
         await bot.stopPolling();
         bot = null;
         setTimeout(async () => {
-          await setupBot();
-        }, 1000);
+          await setupBot(chatId);
+        }, 2000);
       }
     } catch (e) {
       console.error("Restart error:", e);
