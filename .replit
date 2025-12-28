@@ -44,4 +44,3 @@ integrations = ["javascript_openai_ai_integrations:2.0.0"]
 [userenv]
 
 [userenv.shared]
-TELEGRAM_BOT_TOKEN = "8443410464:AAGkknNDGhEmrZXf6YyBCUzIxAV141gJ90Y"
