@@ -347,11 +347,12 @@ export async function setupBot(restartChatId?: number) {
       // However, usually Replit's "Start application" workflow restarts if the process exits.
       // If it's not working, let's try to close the bot and re-setup.
       if (bot) {
-        await bot.stopPolling();
+        const oldBot = bot;
         bot = null;
+        await oldBot.stopPolling();
         setTimeout(async () => {
           await setupBot(chatId);
-        }, 2000);
+        }, 3000);
       }
     } catch (e) {
       console.error("Restart error:", e);
