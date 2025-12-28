@@ -15,7 +15,14 @@ export async function setupBot(restartChatId?: number) {
   }
 
   // Create a bot that uses 'polling' to fetch new updates
-  bot = new TelegramBot(token, { polling: true });
+  bot = new TelegramBot(token, { 
+    polling: {
+      autoStart: true,
+      params: {
+        timeout: 10
+      }
+    } 
+  });
 
   console.log("Telegram bot started...");
 
