@@ -1,4 +1,4 @@
-import { pgTable, text, serial, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, boolean, timestamp, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -10,6 +10,10 @@ export const users = pgTable("users", {
   lastName: text("last_name"),
   role: text("role").notNull().default("user"), // 'operator', 'admin', 'user'
   createdAt: timestamp("created_at").defaultNow(),
+  battlePoints: integer("battle_points").notNull().default(0),
+  inBattle: boolean("in_battle").notNull().default(false),
+  currentRiddle: text("current_riddle"),
+  riddleAnswer: text("riddle_answer"),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });

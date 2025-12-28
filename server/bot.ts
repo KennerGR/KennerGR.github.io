@@ -264,6 +264,36 @@ export async function setupBot(restartChatId?: number) {
       bot?.sendMessage(chatId, response, { parse_mode: 'Markdown' });
   });
 
+  bot.onText(/\/batalla/, async (msg) => {
+    const chatId = msg.chat.id;
+    const telegramId = msg.from?.id.toString();
+    if (!telegramId) return;
+
+    try {
+      const user = await storage.getUserByTelegramId(telegramId);
+      if (!user) return;
+
+      const riddles = [
+        { q: "¿Qué es lo que cuanto más grande es, menos se ve?", a: "la oscuridad" },
+        { q: "Si me nombras, me rompes. ¿Quién soy?", a: "el silencio" },
+        { q: "Blanco por dentro, verde por fuera. Si quieres que te lo diga, espera.", a: "la pera" },
+        { q: "Vuelo sin alas, lloro sin ojos. ¿Qué soy?", a: "la nube" }
+      ];
+      
+      const riddle = riddles[Math.floor(Math.random() * riddles.length)];
+      
+      await storage.updateUserBattle(user.id, {
+        inBattle: true,
+        currentRiddle: riddle.q,
+        riddleAnswer: riddle.a.toLowerCase()
+      });
+
+      bot?.sendMessage(chatId, `🥊 *¡BATALLA DE INGENIO!*\n\nKenner te desafía, pichón:\n\n"${riddle.q}"\n\n_Escribe tu respuesta abajo._`, { parse_mode: 'Markdown' });
+    } catch (e) {
+      console.error("Battle Error:", e);
+    }
+  });
+
   bot.onText(/\/restart/, async (msg) => {
     const chatId = msg.chat.id;
     const telegramId = msg.from?.id.toString();
@@ -312,6 +342,26 @@ export async function setupBot(restartChatId?: number) {
         if (!telegramId) return;
 
         try {
+            const user = await storage.getUserByTelegramId(telegramId);
+            
+            // Battle logic
+            if (user?.inBattle && user.riddleAnswer) {
+              const answer = msg.text.toLowerCase().trim();
+              if (answer === user.riddleAnswer) {
+                await storage.updateUserBattle(user.id, {
+                  inBattle: false,
+                  battlePoints: (user.battlePoints || 0) + 10,
+                  currentRiddle: null,
+                  riddleAnswer: null
+                });
+                bot?.sendMessage(chatId, "🔥 *¡VERGATARIO!* Acertaste, mi alma. Tenéis 10 puntos más. No sois tan gafo después de todo.", { parse_mode: 'Markdown' });
+                return;
+              } else {
+                bot?.sendMessage(chatId, "🤣 *¡MARDICIÓN!* Pelaste bola, ese no es. Seguí intentando o pedí cacao.", { parse_mode: 'Markdown' });
+                return;
+              }
+            }
+
             // Check if AI is enabled
             const aiEnabled = await storage.getConfig('ai');
             if (aiEnabled?.value === 'false') return;
