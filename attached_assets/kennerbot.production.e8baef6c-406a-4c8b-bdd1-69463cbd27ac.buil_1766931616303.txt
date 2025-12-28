@@ -1,0 +1,88 @@
+2025-12-28T14:16:52.567Z	Initializing build environment...
+2025-12-28T14:16:54.550Z	Success: Finished initializing build environment
+2025-12-28T14:16:54.907Z	Cloning repository...
+2025-12-28T14:16:52.567Z	Initializing build environment...
+2025-12-28T14:16:54.550Z	Success: Finished initializing build environment
+2025-12-28T14:16:54.907Z	Cloning repository...
+2025-12-28T14:16:57.300Z	Detected the following tools from environment: npm@10.9.2, nodejs@22.16.0
+2025-12-28T14:16:57.301Z	Restoring from dependencies cache
+2025-12-28T14:16:57.303Z	Restoring from build output cache
+2025-12-28T14:16:57.621Z	Installing project dependencies: npm clean-install --progress=false
+2025-12-28T14:17:01.150Z	npm warn deprecated request@2.88.2: request has been deprecated, see https://github.com/request/request/issues/3142
+2025-12-28T14:17:01.165Z	npm warn deprecated har-validator@5.1.5: this library is no longer supported
+2025-12-28T14:17:02.421Z	npm warn deprecated uuid@3.4.0: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
+2025-12-28T14:17:06.210Z	
+2025-12-28T14:17:06.210Z	added 644 packages, and audited 645 packages in 8s
+2025-12-28T14:17:06.211Z	
+2025-12-28T14:17:06.211Z	133 packages are looking for funding
+2025-12-28T14:17:06.211Z	  run `npm fund` for details
+2025-12-28T14:17:06.217Z	
+2025-12-28T14:17:06.217Z	6 vulnerabilities (4 moderate, 2 critical)
+2025-12-28T14:17:06.217Z	
+2025-12-28T14:17:06.217Z	To address all issues (including breaking changes), run:
+2025-12-28T14:17:06.218Z	  npm audit fix --force
+2025-12-28T14:17:06.218Z	
+2025-12-28T14:17:06.218Z	Run `npm audit` for details.
+2025-12-28T14:17:06.425Z	Executing user build command: npm run build
+2025-12-28T14:17:06.619Z	
+2025-12-28T14:17:06.619Z	> rest-express@1.0.0 build
+2025-12-28T14:17:06.619Z	> tsx script/build.ts
+2025-12-28T14:17:06.620Z	
+2025-12-28T14:17:07.419Z	building client...
+2025-12-28T14:17:07.494Z	vite v7.3.0 building client environment for production...
+2025-12-28T14:17:08.079Z	transforming...
+2025-12-28T14:17:12.024Z	✓ 2312 modules transformed.
+2025-12-28T14:17:12.374Z	rendering chunks...
+2025-12-28T14:17:12.380Z	computing gzip size...
+2025-12-28T14:17:17.729Z	../dist/public/index.html                   2.01 kB │ gzip:   0.77 kB
+2025-12-28T14:17:17.730Z	../dist/public/assets/index-B8Xo8V73.css   68.88 kB │ gzip:  11.45 kB
+2025-12-28T14:17:17.730Z	../dist/public/assets/index-eW5IsmMs.js   451.61 kB │ gzip: 142.03 kB
+2025-12-28T14:17:17.730Z	✓ built in 9.99s
+2025-12-28T14:17:17.730Z	building server...
+2025-12-28T14:17:17.933Z	
+2025-12-28T14:17:17.933Z	  dist/index.cjs  1.1mb ⚠️
+2025-12-28T14:17:17.933Z	
+2025-12-28T14:17:17.933Z	⚡ Done in 188ms
+2025-12-28T14:17:18.037Z	Success: Build command completed
+2025-12-28T14:17:18.192Z	Executing user deploy command: npx wrangler deploy
+2025-12-28T14:17:19.369Z	npm warn exec The following package was not found and will be installed: wrangler@4.54.0
+2025-12-28T14:17:34.408Z	
+2025-12-28T14:17:34.409Z	 ⛅️ wrangler 4.54.0
+2025-12-28T14:17:34.409Z	───────────────────
+2025-12-28T14:17:34.431Z	
+2025-12-28T14:17:34.519Z	✘ [ERROR] Missing entry-point to Worker script or to assets directory
+2025-12-28T14:17:34.519Z	
+2025-12-28T14:17:34.519Z	  
+2025-12-28T14:17:34.519Z	  If there is code to deploy, you can either:
+2025-12-28T14:17:34.519Z	  - Specify an entry-point to your Worker script via the command line (ex: `npx wrangler deploy src/index.ts`)
+2025-12-28T14:17:34.519Z	  - Or create a "wrangler.jsonc" file containing:
+2025-12-28T14:17:34.520Z	  
+2025-12-28T14:17:34.520Z	  ```
+2025-12-28T14:17:34.520Z	  {
+2025-12-28T14:17:34.520Z	    "name": "worker-name",
+2025-12-28T14:17:34.520Z	    "compatibility_date": "2025-12-28",
+2025-12-28T14:17:34.520Z	    "main": "src/index.ts"
+2025-12-28T14:17:34.520Z	  }
+2025-12-28T14:17:34.520Z	  ```
+2025-12-28T14:17:34.521Z	  
+2025-12-28T14:17:34.521Z	  
+2025-12-28T14:17:34.521Z	  If are uploading a directory of assets, you can either:
+2025-12-28T14:17:34.521Z	  - Specify the path to the directory of assets via the command line: (ex: `npx wrangler deploy --assets=./dist`)
+2025-12-28T14:17:34.521Z	  - Or create a "wrangler.jsonc" file containing:
+2025-12-28T14:17:34.521Z	  
+2025-12-28T14:17:34.524Z	  ```
+2025-12-28T14:17:34.525Z	  {
+2025-12-28T14:17:34.525Z	    "name": "worker-name",
+2025-12-28T14:17:34.525Z	    "compatibility_date": "2025-12-28",
+2025-12-28T14:17:34.525Z	    "assets": {
+2025-12-28T14:17:34.525Z	      "directory": "./dist"
+2025-12-28T14:17:34.525Z	    }
+2025-12-28T14:17:34.525Z	  }
+2025-12-28T14:17:34.525Z	  ```
+2025-12-28T14:17:34.525Z	  
+2025-12-28T14:17:34.525Z	
+2025-12-28T14:17:34.525Z	
+2025-12-28T14:17:34.561Z	
+2025-12-28T14:17:34.561Z	Cloudflare collects anonymous telemetry about your usage of Wrangler. Learn more at https://github.com/cloudflare/workers-sdk/tree/main/packages/wrangler/telemetry.md
+2025-12-28T14:17:34.573Z	🪵  Logs were written to "/opt/buildhome/.config/.wrangler/logs/wrangler-2025-12-28_14-17-33_606.log"
+2025-12-28T14:17:45.331Z	Failed: error occurred while running deploy command
