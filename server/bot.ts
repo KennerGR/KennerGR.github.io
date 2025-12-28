@@ -275,10 +275,19 @@ export async function setupBot() {
       
       console.log(`System restart triggered by ${user.username || user.firstName}`);
       
-      // We exit the process, and Replit's workflow runner will automatically restart it.
-      setTimeout(() => {
-        process.exit(0);
-      }, 1000);
+      // Replit workflows are managed. Instead of process.exit, we'll try to just
+      // re-initialize the bot if it was a "soft" restart, but the user asked for a 
+      // system restart. If process.exit doesn't auto-restart, we might need a 
+      // different approach or tell the user Replit manages restarts.
+      // However, usually Replit's "Start application" workflow restarts if the process exits.
+      // If it's not working, let's try to close the bot and re-setup.
+      if (bot) {
+        await bot.stopPolling();
+        bot = null;
+        setTimeout(async () => {
+          await setupBot();
+        }, 1000);
+      }
     } catch (e) {
       console.error("Restart error:", e);
       bot?.sendMessage(chatId, "Error al intentar reiniciar.");
