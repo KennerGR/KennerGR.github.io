@@ -288,9 +288,33 @@ export async function setupBot(restartChatId?: number) {
         riddleAnswer: riddle.a.toLowerCase()
       });
 
-      bot?.sendMessage(chatId, `🥊 *¡BATALLA DE INGENIO!*\n\nKenner te desafía, pichón:\n\n"${riddle.q}"\n\n_Escribe tu respuesta abajo._`, { parse_mode: 'Markdown' });
+      bot?.sendMessage(chatId, `🥊 *¡BATALLA DE INGENIO!*\n\nKenner te desafía, pichón:\n\n"${riddle.q}"\n\n_Escribe tu respuesta abajo o usa /rendirse si te quedó grande._`, { parse_mode: 'Markdown' });
     } catch (e) {
       console.error("Battle Error:", e);
+    }
+  });
+
+  bot.onText(/\/rendirse/, async (msg) => {
+    const chatId = msg.chat.id;
+    const telegramId = msg.from?.id.toString();
+    if (!telegramId) return;
+
+    try {
+      const user = await storage.getUserByTelegramId(telegramId);
+      if (!user || !user.inBattle) {
+        bot?.sendMessage(chatId, "Ni siquiera estáis en una batalla, no seáis tan pajuo.");
+        return;
+      }
+
+      await storage.updateUserBattle(user.id, {
+        inBattle: false,
+        currentRiddle: null,
+        riddleAnswer: null
+      });
+
+      bot?.sendMessage(chatId, "🏳️ *¡TE RENDISTE!* Sabía que no ibas a aguantar el trote. Volvé cuando tengáis un poquito más de ingenio, chamo.", { parse_mode: 'Markdown' });
+    } catch (e) {
+      console.error("Surrender Error:", e);
     }
   });
 
